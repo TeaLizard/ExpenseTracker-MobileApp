@@ -31,6 +31,7 @@ class ExpenseViewModel(application: Application): AndroidViewModel(application){
         loadExpenses()
         resetInputFields()
         errorMessage = ""
+        selectedExpense = null
     }
     private fun loadExpenses() {
         expenses = dbHelper.getExpenses()
