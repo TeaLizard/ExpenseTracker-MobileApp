@@ -5,7 +5,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import com.example.prog2311_assignment3.data.Expense
 import com.example.prog2311_assignment3.data.ExpenseDatabaseHelper
 
@@ -19,7 +18,6 @@ class ExpenseViewModel(application: Application): AndroidViewModel(application){
     var errorMessage by mutableStateOf("")
         private set
 
-    var id by mutableStateOf<Int?>(null)
     var title by mutableStateOf("")
     var amount by mutableStateOf<Int?>(null)
     var category by mutableStateOf("")
@@ -29,7 +27,7 @@ class ExpenseViewModel(application: Application): AndroidViewModel(application){
         loadExpenses()
     }
 
-    private fun reloadPage() {
+    private fun refreshState() {
         loadExpenses()
         resetInputFields()
         errorMessage = ""
@@ -38,7 +36,6 @@ class ExpenseViewModel(application: Application): AndroidViewModel(application){
         expenses = dbHelper.getExpenses()
     }
     private fun resetInputFields() {
-        id = null
         title = ""
         amount = null
         category = ""
@@ -46,6 +43,9 @@ class ExpenseViewModel(application: Application): AndroidViewModel(application){
 
     fun selectExpense(expense: Expense) {
         selectedExpense = expense
+        title = expense.title
+        amount = expense.amount
+        category = expense.category
     }
 
     fun addExpense() {
@@ -82,11 +82,12 @@ class ExpenseViewModel(application: Application): AndroidViewModel(application){
             category = category
         )
         dbHelper.updateExpense(expense)
-        if (dbHelper.getExpenseById(updateId) == null || dbHelper.getExpenseById(updateId) != expense) {
+        val updatedExpense = dbHelper.getExpenseById(updateId)
+        if (updatedExpense == null || updatedExpense != expense) {
             errorMessage = "Error updating expense"
             return
         }
-        reloadPage()
+        refreshState()
     }
 
     fun deleteExpense() {
@@ -100,6 +101,6 @@ class ExpenseViewModel(application: Application): AndroidViewModel(application){
             errorMessage = "Error deleting expense"
             return
         }
-        reloadPage()
+        refreshState()
     }
 }
