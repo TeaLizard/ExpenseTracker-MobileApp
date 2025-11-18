@@ -15,22 +15,24 @@ class ExpenseViewModel(application: Application): AndroidViewModel(application){
         private set
     var selectedExpense by mutableStateOf<Expense?>(null) // used for updating and deleting
         private set
-    var errorMessage by mutableStateOf("")
+    var snackMessage by mutableStateOf("")
         private set
 
     var title by mutableStateOf("")
     var amount by mutableStateOf<Int?>(null)
     var category by mutableStateOf("")
+    val categories = listOf("Food", "Travel", "Bills")
+
 
 
     init {
         loadExpenses()
     }
 
-    private fun refreshState() {
+    fun refreshState() {
         loadExpenses()
         resetInputFields()
-        errorMessage = ""
+        snackMessage = ""
         selectedExpense = null
     }
     private fun loadExpenses() {
@@ -42,14 +44,40 @@ class ExpenseViewModel(application: Application): AndroidViewModel(application){
         category = ""
     }
 
-    fun selectExpense(expense: Expense) {
+    private fun validateInput(): Boolean {
+        if (title.isBlank()) {
+            snackMessage = "Title cannot be empty"
+            return false
+        }
+        if (amount == null) {
+            snackMessage = "Amount cannot be empty"
+            return false
+        }
+        if (category.isBlank()) {
+            snackMessage = "Category cannot be empty"
+            return false
+        }
+        if (amount!! < 0) {
+            snackMessage = "Amount cannot be negative"
+            return false
+        }
+        return true
+    }
+
+    fun selectExpenseToUpdate(expense: Expense) {
         selectedExpense = expense
         title = expense.title
         amount = expense.amount
         category = expense.category
     }
 
+    fun selectExpenseToDelete(expense: Expense) {
+        selectedExpense = expense
+    }
+
+
     fun addExpense() {
+        if (!validateInput()) { return }
         val prevExpensesCount = expenses.size
         dbHelper.addExpense(
             Expense(
@@ -62,18 +90,19 @@ class ExpenseViewModel(application: Application): AndroidViewModel(application){
         )
         loadExpenses()
         if (expenses.size > prevExpensesCount) { // bigger number of expenses means an expense was added
-            errorMessage = ""
+            snackMessage = "Expense added"
         } else {
-            errorMessage = "Error adding expense"
+            snackMessage = "Error adding expense"
             return
         }
         resetInputFields()
     }
 
     fun updateExpense() {
+        if (!validateInput()) { return }
         val updateId = selectedExpense?.id ?: 0
         if (updateId == 0) {
-            errorMessage = "No expense selected"
+            snackMessage = "No expense selected"
             return
         }
         val expense = Expense (
@@ -85,23 +114,25 @@ class ExpenseViewModel(application: Application): AndroidViewModel(application){
         dbHelper.updateExpense(expense)
         val updatedExpense = dbHelper.getExpenseById(updateId)
         if (updatedExpense == null || updatedExpense != expense) {
-            errorMessage = "Error updating expense"
+            snackMessage = "Error updating expense"
             return
         }
         refreshState()
+        snackMessage = "Expense updated"
     }
 
     fun deleteExpense() {
         val deleteId = selectedExpense?.id ?: 0
         if (deleteId == 0) {
-            errorMessage = "No expense selected"
+            snackMessage = "No expense selected"
             return
         }
         dbHelper.deleteExpenseById(deleteId)
         if (dbHelper.getExpenseById(deleteId) != null) {
-            errorMessage = "Error deleting expense"
+            snackMessage = "Error deleting expense"
             return
         }
         refreshState()
+        snackMessage = "Expense deleted"
     }
 }
